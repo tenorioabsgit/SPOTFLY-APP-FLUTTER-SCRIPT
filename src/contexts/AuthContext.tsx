@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -7,6 +8,7 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithCredential,
+  signInWithPopup,
   User as FirebaseUser,
 } from 'firebase/auth';
 import * as WebBrowser from 'expo-web-browser';
@@ -120,6 +122,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signInWithGoogleAuth(): Promise<{ success: boolean; error?: string }> {
     try {
+      // Web: use Firebase signInWithPopup (native browser popup)
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+        await signInWithPopup(auth, provider);
+        return { success: true };
+      }
+
+      // Mobile: use custom OAuth flow with Vercel callback page
       const state = Math.random().toString(36).substring(2, 15);
       const nonce = Math.random().toString(36).substring(2, 15);
 
