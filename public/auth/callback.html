@@ -35,21 +35,39 @@
     <div class="spinner"></div>
     <p>Redirecionando para o Spotfly...</p>
     <p class="hint" id="fallback" style="display:none;">
-      Se nada acontecer, <a href="spotfly://auth">toque aqui para voltar ao app</a>.
+      Se nada acontecer, <a id="fallbackLink" href="spotfly://auth">toque aqui para voltar ao app</a>.
     </p>
   </div>
   <script>
     (function() {
       var hash = window.location.hash.substring(1);
-      if (hash) {
-        window.location.href = 'spotfly://auth?' + hash;
-        setTimeout(function() {
-          document.getElementById('fallback').style.display = 'block';
-        }, 2000);
-      } else {
+      if (!hash) {
         document.querySelector('.container').innerHTML =
           '<p>Nenhum token recebido.</p><p class="hint"><a href="spotfly://auth">Voltar ao app</a></p>';
+        return;
       }
+
+      var deepLink = 'spotfly://auth?' + hash;
+
+      // Android Intent URI - most reliable way to open app from Chrome Custom Tab
+      var intentUri = 'intent://auth?' + hash +
+        '#Intent;scheme=spotfly;package=com.spotfly.app;end;';
+
+      // Try Android Intent first (works in Chrome Custom Tabs)
+      window.location.href = intentUri;
+
+      // Fallback: try direct deep link after short delay
+      setTimeout(function() {
+        window.location.href = deepLink;
+      }, 500);
+
+      // Show manual fallback link after 2s
+      setTimeout(function() {
+        var fallbackEl = document.getElementById('fallback');
+        var fallbackLink = document.getElementById('fallbackLink');
+        if (fallbackEl) fallbackEl.style.display = 'block';
+        if (fallbackLink) fallbackLink.href = deepLink;
+      }, 2000);
     })();
   </script>
 </body>
