@@ -32,6 +32,13 @@
     "plugins": [
       "expo-router",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "858a8b24-0d84-4934-ae5e-68fe96aa60c8"
+      }
+    },
+    "owner": "tenorioabs"
   }
 }
