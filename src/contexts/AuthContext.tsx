@@ -19,10 +19,10 @@ WebBrowser.maybeCompleteAuthSession();
 
 // ============================================================
 // Google OAuth Client IDs
-// Configurar em: Google Cloud Console -> APIs & Services -> Credentials
 // ============================================================
 const GOOGLE_WEB_CLIENT_ID = '215760117220-ao69jilb4mkp6ehu1dtdqb10tuvgiqs7.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = '215760117220-667tm81ao5jgt74sbnkpsghj1lmo9paa.apps.googleusercontent.com';
+// Expo auth proxy provides HTTPS redirect URI required by Google OAuth Web client
+const EXPO_REDIRECT_URI = 'https://auth.expo.io/@tenorioabs/spotfly';
 
 interface AuthContextType {
   user: User | null;
@@ -45,9 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [_request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+  const [_request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: EXPO_REDIRECT_URI,
   });
 
   // Listen to Firebase auth state

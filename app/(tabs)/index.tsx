@@ -123,32 +123,38 @@ export default function HomeScreen() {
           </View>
 
           {/* Recent items grid (2 columns) */}
-          <View style={styles.recentGrid}>
-            {recentItems.map((item) => (
-              <RecentCard
-                key={item.id}
-                title={item.title}
-                artwork={item.artwork}
-                onPress={() => router.push(`/playlist/${item.id}`)}
-              />
-            ))}
-          </View>
+          {filter !== 'music' && (
+            <View style={styles.recentGrid}>
+              {recentItems.map((item) => (
+                <RecentCard
+                  key={item.id}
+                  title={item.title}
+                  artwork={item.artwork}
+                  onPress={() => router.push(`/playlist/${item.id}`)}
+                />
+              ))}
+            </View>
+          )}
 
           {/* Made For You */}
-          <SectionHeader title="Feito para Você" />
-          <FlatList
-            data={madeForYou}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <PlaylistCard playlist={item} showDescription />
-            )}
-          />
+          {filter !== 'music' && (
+            <>
+              <SectionHeader title="Feito para Você" />
+              <FlatList
+                data={madeForYou}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalList}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <PlaylistCard playlist={item} showDescription />
+                )}
+              />
+            </>
+          )}
 
           {/* Community Tracks */}
-          {communityTracks.length > 0 && (
+          {filter !== 'playlists' && communityTracks.length > 0 && (
             <>
               <SectionHeader title="Comunidade Copyleft" />
               <View style={styles.trackSection}>
@@ -165,67 +171,79 @@ export default function HomeScreen() {
           )}
 
           {/* Trending */}
-          <SectionHeader title="Em Alta" />
-          {isLoadingTracks ? (
-            <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
-          ) : (
-            <View style={styles.trackSection}>
-              {trendingTracks.slice(0, 5).map((track, index) => (
-                <TrackRow
-                  key={track.id}
-                  track={track}
-                  trackList={trendingTracks}
-                  index={index}
-                />
-              ))}
-            </View>
+          {filter !== 'playlists' && (
+            <>
+              <SectionHeader title="Em Alta" />
+              {isLoadingTracks ? (
+                <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
+              ) : (
+                <View style={styles.trackSection}>
+                  {trendingTracks.slice(0, 5).map((track, index) => (
+                    <TrackRow
+                      key={track.id}
+                      track={track}
+                      trackList={trendingTracks}
+                      index={index}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
           )}
 
           {/* New Releases */}
-          <SectionHeader title="Lançamentos" />
-          <FlatList
-            data={newReleases}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.albumCard}>
-                <Image
-                  source={{ uri: item.artwork }}
-                  style={styles.albumArtwork}
-                />
-                <Text style={styles.albumTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.albumArtist} numberOfLines={1}>
-                  {item.artist}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
+          {filter !== 'playlists' && (
+            <>
+              <SectionHeader title="Lançamentos" />
+              <FlatList
+                data={newReleases}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalList}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.albumCard}>
+                    <Image
+                      source={{ uri: item.artwork }}
+                      style={styles.albumArtwork}
+                    />
+                    <Text style={styles.albumTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.albumArtist} numberOfLines={1}>
+                      {item.artist}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </>
+          )}
 
           {/* Popular Artists */}
-          <SectionHeader title="Artistas Populares" />
-          <FlatList
-            data={artists.slice(0, 6)}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.artistCard}>
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.artistImage}
-                />
-                <Text style={styles.artistName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.artistLabel}>Artista</Text>
-              </TouchableOpacity>
-            )}
-          />
+          {filter !== 'playlists' && (
+            <>
+              <SectionHeader title="Artistas Populares" />
+              <FlatList
+                data={artists.slice(0, 6)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalList}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.artistCard}>
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.artistImage}
+                    />
+                    <Text style={styles.artistName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.artistLabel}>Artista</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </>
+          )}
 
           {/* Copyleft Banner */}
           <View style={styles.banner}>
