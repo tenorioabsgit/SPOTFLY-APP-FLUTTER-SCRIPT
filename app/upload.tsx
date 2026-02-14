@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../src/constants/Colors';
 import { Layout } from '../src/constants/Layout';
 import { Track } from '../src/types';
-import { uploadMusicFile, UploadProgress } from '../src/services/cloudStorage';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadMusicFile, uploadPlaylistCover, UploadProgress } from '../src/services/cloudStorage';
 import { saveTrackMetadata, getUserTracks, deleteTrackMetadata } from '../src/services/firestore';
 import { usePlayer } from '../src/contexts/PlayerContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -36,6 +38,7 @@ export default function UploadScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
+  const [coverUri, setCoverUri] = useState('');
 
   useEffect(() => {
     loadUploadedTracks();
@@ -84,6 +87,22 @@ export default function UploadScreen() {
     }
   }
 
+  async function pickCoverImage() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setCoverUri(result.assets[0].uri);
+      }
+    } catch (e) {
+      console.error('Error picking cover:', e);
+    }
+  }
+
   async function saveUploadedTrack() {
     if (!editTrack.title?.trim()) {
       Alert.alert('Erro', 'Digite um título para a música');
@@ -105,26 +124,37 @@ export default function UploadScreen() {
         }
       );
 
+      // Upload cover image if selected
       const trackId = 'upload-' + Date.now();
+      let artworkUrl = `https://picsum.photos/seed/${trackId}/300/300`;
+      if (coverUri) {
+        try {
+          artworkUrl = await uploadPlaylistCover(user.id, coverUri);
+        } catch (e) {
+          console.error('Cover upload error:', e);
+        }
+      }
+
       const newTrack: Track = {
         id: trackId,
         title: editTrack.title?.trim() || pendingName,
         artist: editTrack.artist?.trim() || 'Artista Desconhecido',
         album: editTrack.album?.trim() || 'Meus Uploads',
         duration: 0,
-        artwork: `https://picsum.photos/seed/${trackId}/300/300`,
+        artwork: artworkUrl,
         audioUrl,
         isLocal: false,
         genre: editTrack.genre || 'Outro',
-        license: 'Upload pessoal',
+        license: 'Copyleft - Livre para compartilhar',
         addedAt: Date.now(),
       };
 
-      // Save metadata to Firestore
+      // Save metadata to Firestore (visible to all users)
       await saveTrackMetadata({
         ...newTrack,
         // @ts-ignore - extra field for Firestore query
         uploadedBy: user.id,
+        uploadedByName: user.displayName || 'Anônimo',
         titleLower: newTrack.title.toLowerCase(),
       } as any);
 
@@ -134,8 +164,12 @@ export default function UploadScreen() {
       setPendingUri('');
       setPendingName('');
       setEditTrack({});
+      setCoverUri('');
 
-      Alert.alert('Sucesso', `"${newTrack.title}" foi enviada com sucesso!`);
+      Alert.alert(
+        'Música compartilhada!',
+        `"${newTrack.title}" agora está disponível para toda a comunidade Spotfly!\n\nShare, Build, Share`
+      );
     } catch (e) {
       console.error('Upload error:', e);
       Alert.alert('Erro', 'Não foi possível enviar o arquivo. Tente novamente.');
@@ -175,7 +209,7 @@ export default function UploadScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Suas Músicas</Text>
+        <Text style={styles.headerTitle}>Compartilhar Música</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -201,9 +235,12 @@ export default function UploadScreen() {
           ) : (
             <>
               <Ionicons name="cloud-upload" size={40} color={Colors.textPrimary} />
-              <Text style={styles.uploadTitle}>Fazer Upload</Text>
+              <Text style={styles.uploadTitle}>Compartilhar Música</Text>
               <Text style={styles.uploadSubtitle}>
                 MP3, WAV, FLAC, OGG, AAC, M4A
+              </Text>
+              <Text style={[styles.uploadSubtitle, { marginTop: 4, fontSize: 11 }]}>
+                Sua música ficará disponível para toda a comunidade
               </Text>
             </>
           )}
@@ -292,6 +329,35 @@ export default function UploadScreen() {
               placeholderTextColor={Colors.textInactive}
               editable={!isUploading}
             />
+
+            {/* Cover Image Picker */}
+            <TouchableOpacity
+              style={styles.coverPickerButton}
+              onPress={pickCoverImage}
+              disabled={isUploading}
+            >
+              {coverUri ? (
+                <Image source={{ uri: coverUri }} style={styles.coverPreview} />
+              ) : (
+                <View style={styles.coverPlaceholder}>
+                  <Ionicons name="image-outline" size={28} color={Colors.textSecondary} />
+                </View>
+              )}
+              <View style={styles.coverPickerInfo}>
+                <Text style={styles.coverPickerText}>
+                  {coverUri ? 'Capa selecionada' : 'Adicionar capa (opcional)'}
+                </Text>
+                <Text style={styles.coverPickerHint}>Toque para escolher uma imagem</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Copyleft Notice */}
+            <View style={styles.copyleftNotice}>
+              <Ionicons name="globe-outline" size={16} color={Colors.primary} />
+              <Text style={styles.copyleftNoticeText}>
+                Ao enviar, sua música será compartilhada com toda a comunidade sob licença Copyleft.
+              </Text>
+            </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -442,6 +508,58 @@ const styles = StyleSheet.create({
     marginBottom: Layout.padding.md,
     borderWidth: 1,
     borderColor: Colors.inactive,
+  },
+  coverPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: Layout.borderRadius.sm,
+    padding: Layout.padding.sm,
+    marginBottom: Layout.padding.md,
+    borderWidth: 1,
+    borderColor: Colors.inactive,
+  },
+  coverPreview: {
+    width: 50,
+    height: 50,
+    borderRadius: Layout.borderRadius.sm,
+  },
+  coverPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: Layout.borderRadius.sm,
+    backgroundColor: Colors.inactive,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coverPickerInfo: {
+    flex: 1,
+    marginLeft: Layout.padding.sm,
+  },
+  coverPickerText: {
+    color: Colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  coverPickerHint: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  copyleftNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(29, 185, 84, 0.1)',
+    borderRadius: Layout.borderRadius.sm,
+    padding: Layout.padding.sm,
+    marginBottom: Layout.padding.md,
+  },
+  copyleftNoticeText: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+    flex: 1,
+    marginLeft: Layout.padding.xs,
+    lineHeight: 16,
   },
   modalButtons: {
     flexDirection: 'row',

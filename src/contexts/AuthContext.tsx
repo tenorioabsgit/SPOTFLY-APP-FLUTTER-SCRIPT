@@ -22,7 +22,7 @@ WebBrowser.maybeCompleteAuthSession();
 // Configurar em: Google Cloud Console -> APIs & Services -> Credentials
 // ============================================================
 const GOOGLE_WEB_CLIENT_ID = '215760117220-ao69jilb4mkp6ehu1dtdqb10tuvgiqs7.apps.googleusercontent.com';
-const GOOGLE_ANDROID_CLIENT_ID = '215760117220-ao69jilb4mkp6ehu1dtdqb10tuvgiqs7.apps.googleusercontent.com';
+const GOOGLE_ANDROID_CLIENT_ID = '215760117220-667tm81ao5jgt74sbnkpsghj1lmo9paa.apps.googleusercontent.com';
 
 interface AuthContextType {
   user: User | null;

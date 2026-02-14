@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,12 +17,13 @@ import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
+import { Track } from '../../src/types';
+import { getAllCopyleftTracks } from '../../src/services/firestore';
 import {
-  tracks,
+  tracks as mockTracks,
   defaultPlaylists,
   artists,
   albums,
-  getTracksByIds,
 } from '../../src/data/mockData';
 import PlaylistCard from '../../src/components/PlaylistCard';
 import RecentCard from '../../src/components/RecentCard';
@@ -35,8 +37,25 @@ export default function HomeScreen() {
   const { playTrack } = usePlayer();
   const router = useRouter();
   const [filter, setFilter] = useState<FilterType>('all');
+  const [communityTracks, setCommunityTracks] = useState<Track[]>([]);
+  const [isLoadingTracks, setIsLoadingTracks] = useState(true);
 
   const greeting = getGreeting();
+
+  useEffect(() => {
+    loadCommunityTracks();
+  }, []);
+
+  async function loadCommunityTracks() {
+    try {
+      const tracks = await getAllCopyleftTracks(20);
+      setCommunityTracks(tracks);
+    } catch (e) {
+      console.error('Error loading community tracks:', e);
+    } finally {
+      setIsLoadingTracks(false);
+    }
+  }
 
   function getGreeting(): string {
     const hour = new Date().getHours();
@@ -47,7 +66,8 @@ export default function HomeScreen() {
 
   const recentItems = defaultPlaylists.slice(0, 6);
   const madeForYou = defaultPlaylists.slice(0, 4);
-  const trendingTracks = tracks.slice(0, 8);
+  const allTracks = communityTracks.length > 0 ? communityTracks : mockTracks.slice(0, 8);
+  const trendingTracks = allTracks.slice(0, 8);
   const newReleases = albums.slice(0, 6);
 
   return (
@@ -127,18 +147,39 @@ export default function HomeScreen() {
             )}
           />
 
+          {/* Community Tracks */}
+          {communityTracks.length > 0 && (
+            <>
+              <SectionHeader title="Comunidade Copyleft" />
+              <View style={styles.trackSection}>
+                {communityTracks.slice(0, 5).map((track, index) => (
+                  <TrackRow
+                    key={track.id}
+                    track={track}
+                    trackList={communityTracks}
+                    index={index}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+
           {/* Trending */}
           <SectionHeader title="Em Alta" />
-          <View style={styles.trackSection}>
-            {trendingTracks.slice(0, 5).map((track, index) => (
-              <TrackRow
-                key={track.id}
-                track={track}
-                trackList={trendingTracks}
-                index={index}
-              />
-            ))}
-          </View>
+          {isLoadingTracks ? (
+            <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
+          ) : (
+            <View style={styles.trackSection}>
+              {trendingTracks.slice(0, 5).map((track, index) => (
+                <TrackRow
+                  key={track.id}
+                  track={track}
+                  trackList={trendingTracks}
+                  index={index}
+                />
+              ))}
+            </View>
+          )}
 
           {/* New Releases */}
           <SectionHeader title="Lançamentos" />
@@ -194,12 +235,20 @@ export default function HomeScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.bannerGradient}
             >
-              <Ionicons name="heart" size={32} color={Colors.textPrimary} />
-              <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>Share, Build, Share</Text>
+              <View style={styles.bannerContent}>
+                <Text style={styles.bannerSlogan}>Share, Build, Share</Text>
+                <Text style={styles.bannerTitle}>Plataforma 100% Copyleft</Text>
                 <Text style={styles.bannerSubtitle}>
-                  Músicas copyleft - ouça, compartilhe e crie livremente!
+                  Todas as músicas aqui são livres. Ouça, compartilhe, remixe e crie sem restrições.
+                  Copyleft significa liberdade: o direito de usar, modificar e redistribuir arte para todos.
                 </Text>
+                <TouchableOpacity
+                  style={styles.bannerButton}
+                  onPress={() => router.push('/upload')}
+                >
+                  <Ionicons name="cloud-upload" size={18} color={Colors.primary} />
+                  <Text style={styles.bannerButtonText}>Contribua com sua música</Text>
+                </TouchableOpacity>
               </View>
             </LinearGradient>
           </View>
@@ -335,23 +384,45 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   bannerGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: Layout.padding.lg,
   },
-  bannerText: {
-    flex: 1,
-    marginLeft: Layout.padding.md,
+  bannerContent: {
+    alignItems: 'center',
+  },
+  bannerSlogan: {
+    color: Colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   bannerTitle: {
     color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+    opacity: 0.9,
   },
   bannerSubtitle: {
     color: Colors.textPrimary,
+    fontSize: 12,
+    opacity: 0.85,
+    marginTop: Layout.padding.sm,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  bannerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.textPrimary,
+    borderRadius: Layout.borderRadius.round,
+    paddingHorizontal: Layout.padding.lg,
+    paddingVertical: Layout.padding.sm,
+    marginTop: Layout.padding.md,
+  },
+  bannerButtonText: {
+    color: Colors.primary,
     fontSize: 13,
-    opacity: 0.9,
-    marginTop: 4,
+    fontWeight: '700',
+    marginLeft: Layout.padding.xs,
   },
 });
