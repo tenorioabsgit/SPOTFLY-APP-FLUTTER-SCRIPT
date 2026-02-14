@@ -12,12 +12,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Console: https://console.firebase.google.com/
 // ============================================================
 const firebaseConfig = {
-  apiKey: 'AIzaSyDEMO_KEY_REPLACE_ME',
+  apiKey: 'AIzaSyAlcChuWLkw9-zuf_GAkvU3drg6Hz1NQhc',
   authDomain: 'spotfly-app.firebaseapp.com',
   projectId: 'spotfly-app',
   storageBucket: 'spotfly-app.firebasestorage.app',
-  messagingSenderId: '000000000000',
-  appId: '1:000000000000:web:0000000000000000000000',
+  messagingSenderId: '215760117220',
+  appId: '1:215760117220:web:62871c1c1fc7f651503bf1',
 };
 
 let app: FirebaseApp;
