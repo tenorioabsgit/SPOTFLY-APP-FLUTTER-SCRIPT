@@ -44,6 +44,7 @@ export default function LibraryScreen() {
   const [newPlaylistDesc, setNewPlaylistDesc] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     loadPlaylists();
@@ -169,7 +170,10 @@ export default function LibraryScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.profileRow}>
+        <TouchableOpacity
+          style={styles.profileRow}
+          onPress={() => setShowProfileMenu(true)}
+        >
           <Image
             source={{ uri: user?.photoUrl || 'https://i.pravatar.cc/40' }}
             style={styles.avatar}
@@ -277,43 +281,69 @@ export default function LibraryScreen() {
         />
       )}
 
-      {/* Language toggle + Logout */}
-      <View style={styles.topRightActions}>
+      {/* Profile Menu Modal */}
+      <Modal
+        visible={showProfileMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowProfileMenu(false)}
+      >
         <TouchableOpacity
-          style={styles.langToggle}
-          onPress={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowProfileMenu(false)}
         >
-          <Text style={styles.langToggleText}>{language === 'pt' ? 'EN' : 'PT'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => {
-            const msg = language === 'pt' ? 'Deseja sair da sua conta?' : 'Do you want to sign out?';
-            if (Platform.OS === 'web') {
-              if (window.confirm(msg)) {
+          <View style={styles.menuContainer}>
+            {/* Profile Info */}
+            <View style={styles.menuProfile}>
+              <Image
+                source={{ uri: user?.photoUrl || 'https://i.pravatar.cc/40' }}
+                style={styles.menuAvatar}
+              />
+              <View style={styles.menuProfileInfo}>
+                <Text style={styles.menuProfileName} numberOfLines={1}>
+                  {user?.displayName || 'Usuário'}
+                </Text>
+                <Text style={styles.menuProfileEmail} numberOfLines={1}>
+                  {user?.email || ''}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.menuDivider} />
+
+            {/* Language Toggle */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setLanguage(language === 'pt' ? 'en' : 'pt');
+              }}
+            >
+              <Ionicons name="language-outline" size={22} color={Colors.textPrimary} />
+              <Text style={styles.menuItemText}>
+                {language === 'pt' ? 'Switch to English' : 'Mudar para Português'}
+              </Text>
+              <View style={styles.menuBadge}>
+                <Text style={styles.menuBadgeText}>{language.toUpperCase()}</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Logout */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowProfileMenu(false);
                 signOut();
-              }
-            } else {
-              Alert.alert(
-                t('profile.logout'),
-                msg,
-                [
-                  { text: t('upload.cancel'), style: 'cancel' },
-                  {
-                    text: t('profile.logout'),
-                    style: 'destructive',
-                    onPress: async () => {
-                      await signOut();
-                    },
-                  },
-                ]
-              );
-            }
-          }}
-        >
-          <Ionicons name="log-out-outline" size={20} color={Colors.textSecondary} />
+              }}
+            >
+              <Ionicons name="log-out-outline" size={22} color="#ff5252" />
+              <Text style={[styles.menuItemText, { color: '#ff5252' }]}>
+                {t('profile.logout')}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
-      </View>
+      </Modal>
 
       {/* Create Playlist Modal */}
       <Modal
@@ -530,29 +560,76 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topRightActions: {
-    position: 'absolute',
-    top: 20,
-    right: 16,
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    paddingTop: 60,
+    paddingLeft: Layout.padding.md,
+  },
+  menuContainer: {
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.padding.md,
+    width: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuProfile: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: Layout.padding.sm,
   },
-  langToggle: {
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: Layout.borderRadius.round,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+  menuAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: Layout.padding.sm,
   },
-  langToggleText: {
-    color: Colors.primary,
-    fontSize: 12,
+  menuProfileInfo: {
+    flex: 1,
+  },
+  menuProfileName: {
+    color: Colors.textPrimary,
+    fontSize: 16,
     fontWeight: '700',
   },
-  logoutButton: {
-    padding: 8,
+  menuProfileEmail: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: Colors.inactive,
+    marginVertical: Layout.padding.sm,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  menuItemText: {
+    color: Colors.textPrimary,
+    fontSize: 15,
+    marginLeft: Layout.padding.sm,
+    flex: 1,
+  },
+  menuBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.borderRadius.round,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  menuBadgeText: {
+    color: Colors.background,
+    fontSize: 11,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
