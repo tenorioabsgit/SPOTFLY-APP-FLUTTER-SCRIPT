@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { Track, RepeatMode } from '../types';
+import { getOfflinePath } from '../services/offlineStorage';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -134,8 +135,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Check for offline version first
+      const offlinePath = await getOfflinePath(track.id);
+      const audioUri = offlinePath || track.audioUrl;
+
       const { sound } = await Audio.Sound.createAsync(
-        { uri: track.audioUrl },
+        { uri: audioUri },
         { shouldPlay: true },
         onPlaybackStatusUpdate
       );

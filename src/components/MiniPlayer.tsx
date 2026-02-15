@@ -5,10 +5,9 @@ import { useRouter } from 'expo-router';
 import { usePlayer } from '../contexts/PlayerContext';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
-import { formatDuration } from '../utils/format';
 
 export default function MiniPlayer() {
-  const { currentTrack, isPlaying, togglePlay, position, duration } = usePlayer();
+  const { currentTrack, isPlaying, togglePlay, nextTrack, previousTrack, position, duration } = usePlayer();
   const router = useRouter();
 
   if (!currentTrack) return null;
@@ -40,15 +39,33 @@ export default function MiniPlayer() {
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
+              previousTrack();
+            }}
+            style={styles.controlButton}
+          >
+            <Ionicons name="play-skip-back" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
               togglePlay();
             }}
-            style={styles.playButton}
+            style={styles.controlButton}
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
               size={24}
               color={Colors.textPrimary}
             />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              nextTrack();
+            }}
+            style={styles.controlButton}
+          >
+            <Ionicons name="play-skip-forward" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -99,8 +116,9 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  playButton: {
-    padding: Layout.padding.sm,
+  controlButton: {
+    padding: Layout.padding.xs,
   },
 });

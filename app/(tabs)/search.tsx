@@ -6,12 +6,12 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Alert,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';

@@ -7,11 +7,11 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -253,11 +253,15 @@ export default function HomeScreen() {
                     contentContainerStyle={styles.horizontalList}
                     keyExtractor={(item) => item.name}
                     renderItem={({ item }) => (
-                      <View style={styles.artistCard}>
+                      <TouchableOpacity
+                        style={styles.artistCard}
+                        onPress={() => router.push(`/artist/${encodeURIComponent(item.name)}`)}
+                        activeOpacity={0.7}
+                      >
                         <Image source={{ uri: item.image }} style={styles.artistImage} />
                         <Text style={styles.artistName} numberOfLines={1}>{item.name}</Text>
                         <Text style={styles.artistLabel}>{t('home.artist')}</Text>
-                      </View>
+                      </TouchableOpacity>
                     )}
                   />
                 </>

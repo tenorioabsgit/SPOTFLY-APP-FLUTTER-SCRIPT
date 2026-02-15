@@ -106,6 +106,27 @@ export const translations = {
   'tab.search': { pt: 'Buscar', en: 'Search' },
   'tab.library': { pt: 'Biblioteca', en: 'Library' },
   'tab.profile': { pt: 'Perfil', en: 'Profile' },
+  // ===== Artist =====
+  'artist.albums': { pt: 'Álbuns', en: 'Albums' },
+  'artist.tracks': { pt: 'Todas as Faixas', en: 'All Tracks' },
+  'artist.songs': { pt: 'músicas', en: 'songs' },
+
+  // ===== Album CRUD =====
+  'album.editTitle': { pt: 'Editar Álbum', en: 'Edit Album' },
+  'album.albumName': { pt: 'Nome do Álbum', en: 'Album Name' },
+  'album.genre': { pt: 'Gênero', en: 'Genre' },
+  'album.save': { pt: 'Salvar', en: 'Save' },
+  'album.cancel': { pt: 'Cancelar', en: 'Cancel' },
+  'album.delete': { pt: 'Excluir Álbum', en: 'Delete Album' },
+  'album.deleteConfirm': { pt: 'Tem certeza que deseja excluir este álbum e todas as suas músicas?', en: 'Are you sure you want to delete this album and all its tracks?' },
+  'album.changeCover': { pt: 'Alterar Capa', en: 'Change Cover' },
+
+  // ===== Offline Sync =====
+  'album.syncStart': { pt: 'Sincronizando álbum...', en: 'Syncing album...' },
+  'album.syncComplete': { pt: 'Álbum sincronizado!', en: 'Album synced!' },
+  'album.syncRemove': { pt: 'Remover sincronização?', en: 'Remove sync?' },
+  'album.synced': { pt: 'Sincronizado', en: 'Synced' },
+  'album.syncProgress': { pt: 'Baixando', en: 'Downloading' },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

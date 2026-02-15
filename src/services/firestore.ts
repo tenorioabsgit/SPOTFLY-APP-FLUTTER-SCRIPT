@@ -140,6 +140,10 @@ export async function deleteTrackMetadata(trackId: string): Promise<void> {
   await deleteDoc(doc(db, 'tracks', trackId));
 }
 
+export async function updateTrackMetadata(trackId: string, updates: Partial<Track>): Promise<void> {
+  await updateDoc(doc(db, 'tracks', trackId), updates);
+}
+
 export async function getTracksByIds(trackIds: string[]): Promise<Track[]> {
   if (trackIds.length === 0) return [];
   const results: Track[] = [];
@@ -175,15 +179,14 @@ export async function getTracksByAlbum(albumName: string): Promise<Track[]> {
     .sort((a, b) => (a.title || '').localeCompare(b.title || ''));
 }
 
-export async function getAllCopyleftTracks(limitCount = 50): Promise<Track[]> {
+export async function getTracksByArtist(artistName: string): Promise<Track[]> {
   const q = query(
     collection(db, 'tracks'),
-    where('isLocal', '==', false)
+    where('artist', '==', artistName)
   );
   const snap = await getDocs(q);
   return snap.docs.map(d => docToTrack(d.id, d.data()))
-    .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
-    .slice(0, limitCount);
+    .sort((a, b) => (a.album || '').localeCompare(b.album || ''));
 }
 
 // ============================================================

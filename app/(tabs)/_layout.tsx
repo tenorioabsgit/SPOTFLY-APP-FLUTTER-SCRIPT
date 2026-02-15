@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
 import MiniPlayer from '../../src/components/MiniPlayer';
@@ -14,12 +15,15 @@ export default function TabLayout() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!user) {
       router.replace('/(auth)/login');
     }
   }, [user]);
+
+  const tabBarHeight = Layout.tabBarHeight + insets.bottom;
 
   return (
     <View style={styles.container}>
@@ -29,8 +33,8 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: Colors.tabBarBackground,
             borderTopColor: 'transparent',
-            height: Layout.tabBarHeight,
-            paddingBottom: 6,
+            height: tabBarHeight,
+            paddingBottom: insets.bottom + 6,
             paddingTop: 6,
           },
           tabBarActiveTintColor: Colors.textPrimary,
@@ -70,7 +74,7 @@ export default function TabLayout() {
         />
       </Tabs>
       {currentTrack && (
-        <View style={styles.miniPlayerContainer}>
+        <View style={[styles.miniPlayerContainer, { bottom: tabBarHeight }]}>
           <MiniPlayer />
         </View>
       )}
@@ -85,7 +89,6 @@ const styles = StyleSheet.create({
   },
   miniPlayerContainer: {
     position: 'absolute',
-    bottom: Layout.tabBarHeight,
     left: 0,
     right: 0,
   },
