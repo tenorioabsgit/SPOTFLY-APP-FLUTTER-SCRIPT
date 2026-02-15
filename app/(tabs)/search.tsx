@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,10 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  Alert,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
@@ -20,21 +19,20 @@ import { searchTracksByTitle } from '../../src/services/firestore';
 import { Track } from '../../src/types';
 import CategoryCard from '../../src/components/CategoryCard';
 import TrackRow from '../../src/components/TrackRow';
-import { usePlayer } from '../../src/contexts/PlayerContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import LanguageToggle from '../../src/components/LanguageToggle';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 type Tab = 'all' | 'tracks' | 'artists' | 'albums' | 'playlists';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('all');
-  const { playTrack } = usePlayer();
-  const { signOut } = useAuth();
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const router = useRouter();
   const [firestoreTracks, setFirestoreTracks] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Search Firestore when query changes (with debounce)
   useEffect(() => {
     if (!query.trim()) {
       setFirestoreTracks([]);
@@ -67,11 +65,11 @@ export default function SearchScreen() {
   }, [query, firestoreTracks]);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'all', label: 'Tudo' },
-    { key: 'tracks', label: 'Músicas' },
-    { key: 'artists', label: 'Artistas' },
-    { key: 'albums', label: 'Álbuns' },
-    { key: 'playlists', label: 'Playlists' },
+    { key: 'all', label: t('search.everything') },
+    { key: 'tracks', label: t('search.songs') },
+    { key: 'artists', label: t('library.artists') },
+    { key: 'albums', label: t('library.albums') },
+    { key: 'playlists', label: t('library.playlists') },
   ];
 
   function renderCategories() {
@@ -81,7 +79,7 @@ export default function SearchScreen() {
     }
     return (
       <View style={styles.categoriesContainer}>
-        <Text style={styles.browseTitle}>Navegar por categorias</Text>
+        <Text style={styles.browseTitle}>{t('search.browseAll')}</Text>
         {pairs.map((pair, index) => (
           <View key={index} style={styles.categoryRow}>
             {pair.map((cat) => (
@@ -122,10 +120,7 @@ export default function SearchScreen() {
                   onPress={() => setActiveTab(item.key)}
                 >
                   <Text
-                    style={[
-                      styles.tabText,
-                      activeTab === item.key && styles.tabTextActive,
-                    ]}
+                    style={[styles.tabText, activeTab === item.key && styles.tabTextActive]}
                   >
                     {item.label}
                   </Text>
@@ -138,7 +133,7 @@ export default function SearchScreen() {
               results.tracks.length > 0 && (
                 <View style={styles.resultSection}>
                   {activeTab === 'all' && (
-                    <Text style={styles.resultSectionTitle}>Músicas</Text>
+                    <Text style={styles.resultSectionTitle}>{t('search.songs')}</Text>
                   )}
                   {results.tracks.map((track) => (
                     <TrackRow
@@ -155,17 +150,14 @@ export default function SearchScreen() {
               results.artists.length > 0 && (
                 <View style={styles.resultSection}>
                   {activeTab === 'all' && (
-                    <Text style={styles.resultSectionTitle}>Artistas</Text>
+                    <Text style={styles.resultSectionTitle}>{t('library.artists')}</Text>
                   )}
-                  {results.artists.map((artist) => (
+                  {results.artists.map((artist: any) => (
                     <TouchableOpacity key={artist.id} style={styles.artistRow}>
-                      <Image
-                        source={{ uri: artist.image }}
-                        style={styles.artistImage}
-                      />
+                      <Image source={{ uri: artist.image }} style={styles.artistImage} />
                       <View style={styles.artistInfo}>
                         <Text style={styles.artistName}>{artist.name}</Text>
-                        <Text style={styles.artistMeta}>Artista</Text>
+                        <Text style={styles.artistMeta}>{t('home.artist')}</Text>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -177,18 +169,15 @@ export default function SearchScreen() {
               results.albums.length > 0 && (
                 <View style={styles.resultSection}>
                   {activeTab === 'all' && (
-                    <Text style={styles.resultSectionTitle}>Álbuns</Text>
+                    <Text style={styles.resultSectionTitle}>{t('library.albums')}</Text>
                   )}
-                  {results.albums.map((album) => (
+                  {results.albums.map((album: any) => (
                     <TouchableOpacity key={album.id} style={styles.albumRow}>
-                      <Image
-                        source={{ uri: album.artwork }}
-                        style={styles.albumImage}
-                      />
+                      <Image source={{ uri: album.artwork }} style={styles.albumImage} />
                       <View style={styles.albumInfo}>
                         <Text style={styles.albumName}>{album.title}</Text>
                         <Text style={styles.albumMeta}>
-                          Álbum - {album.artist}
+                          {t('library.album')} - {album.artist}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -200,7 +189,7 @@ export default function SearchScreen() {
             {isSearching && results.tracks.length === 0 && (
               <View style={styles.emptyState}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.emptyText}>Buscando...</Text>
+                <Text style={styles.emptyText}>{t('search.searching')}</Text>
               </View>
             )}
             {!isSearching &&
@@ -209,13 +198,9 @@ export default function SearchScreen() {
               results.albums.length === 0 &&
               results.playlists.length === 0 && (
                 <View style={styles.emptyState}>
-                  <Ionicons
-                    name="search"
-                    size={48}
-                    color={Colors.textInactive}
-                  />
+                  <Ionicons name="search" size={48} color={Colors.textInactive} />
                   <Text style={styles.emptyText}>
-                    Nenhum resultado para "{query}"
+                    {t('search.noResults')} "{query}"
                   </Text>
                 </View>
               )}
@@ -229,28 +214,21 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Buscar</Text>
-        <View style={styles.headerRight}>
-          <LanguageToggle />
-          <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={() => {
-            if (Platform.OS === 'web') {
-              if (window.confirm('Deseja sair da sua conta?')) {
-                signOut();
-              }
-            } else {
-              Alert.alert('Sair', 'Deseja sair da sua conta?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Sair', style: 'destructive', onPress: () => signOut() },
-              ]);
-            }
-          }}
-        >
-          <Ionicons name="log-out-outline" size={24} color="#ff5252" />
+        <TouchableOpacity onPress={() => router.push('/profile')}>
+          {user?.photoUrl ? (
+            <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>
+                {(user?.displayName || 'U').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>{t('search.title')}</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       {/* Search input */}
@@ -260,7 +238,7 @@ export default function SearchScreen() {
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
-          placeholder="Artistas, músicas ou playlists"
+          placeholder={t('search.searchPlaceholder')}
           placeholderTextColor={Colors.inactive}
         />
         {query.length > 0 && (
@@ -294,23 +272,35 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Layout.padding.md,
     paddingTop: Layout.padding.md,
     paddingBottom: Layout.padding.sm,
+    gap: Layout.padding.sm,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  avatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarInitial: {
+    color: Colors.background,
+    fontSize: 14,
+    fontWeight: '700',
   },
   title: {
+    flex: 1,
     color: Colors.textPrimary,
     fontSize: 24,
     fontWeight: '700',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logoutBtn: {
   },
   searchContainer: {
     flexDirection: 'row',

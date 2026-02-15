@@ -8,8 +8,6 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,7 +16,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { usePlayer } from '../../src/contexts/PlayerContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Track } from '../../src/types';
 import { getAllTracks, getPublicPlaylists, getUserPlaylists } from '../../src/services/firestore';
@@ -50,8 +47,7 @@ interface ArtistCard {
 type FilterType = 'all' | 'music' | 'playlists';
 
 export default function HomeScreen() {
-  const { user, signOut } = useAuth();
-  const { playTrack } = usePlayer();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [filter, setFilter] = useState<FilterType>('all');
@@ -121,39 +117,17 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Header */}
+          {/* Header — Spotify style: profile icon + chips on same row */}
           <View style={styles.header}>
-            <Text style={styles.greeting}>{greeting}</Text>
-            <View style={styles.headerIcons}>
-              <LanguageToggle />
-              <TouchableOpacity
-                style={styles.headerIcon}
-                onPress={() => router.push('/upload')}
-              >
-                <Ionicons name="add-circle-outline" size={28} color={Colors.textPrimary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerIcon}
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    if (window.confirm('Deseja sair da sua conta?')) {
-                      signOut();
-                    }
-                  } else {
-                    Alert.alert('Sair', 'Deseja sair da sua conta?', [
-                      { text: 'Cancelar', style: 'cancel' },
-                      { text: 'Sair', style: 'destructive', onPress: () => signOut() },
-                    ]);
-                  }
-                }}
-              >
-                <Ionicons name="log-out-outline" size={26} color="#ff5252" />
-              </TouchableOpacity>
-            </View>
-          </View>
+            <TouchableOpacity
+              style={styles.profileIcon}
+              onPress={() => router.push('/profile')}
+            >
+              <Text style={styles.profileInitial}>
+                {(user?.displayName || 'U').charAt(0).toUpperCase()}
+              </Text>
+            </TouchableOpacity>
 
-          {/* Filter chips */}
-          <View style={styles.filterRow}>
             {(['all', 'music', 'playlists'] as FilterType[]).map((f) => (
               <TouchableOpacity
                 key={f}
@@ -170,7 +144,30 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+
+            <View style={{ flex: 1 }} />
+            <LanguageToggle />
           </View>
+
+          {/* Greeting */}
+          <Text style={styles.greeting}>{greeting}</Text>
+
+          {/* Quick Access Grid — 2 columns like Spotify */}
+          {filter !== 'playlists' && albumCards.length > 0 && (
+            <View style={styles.quickAccessGrid}>
+              {albumCards.slice(0, 6).map((item) => (
+                <TouchableOpacity
+                  key={item.name}
+                  style={styles.quickAccessCard}
+                  onPress={() => router.push(`/album/${encodeURIComponent(item.name)}`)}
+                  activeOpacity={0.7}
+                >
+                  <Image source={{ uri: item.artwork }} style={styles.quickAccessArt} />
+                  <Text style={styles.quickAccessTitle} numberOfLines={1}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           {isLoading ? (
             <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
@@ -271,7 +268,7 @@ export default function HomeScreen() {
               {allTrks.length === 0 && playlists.length === 0 && (
                 <View style={styles.emptyState}>
                   <Ionicons name="musical-notes" size={48} color={Colors.textInactive} />
-                  <Text style={styles.emptyText}>Nenhuma música ainda</Text>
+                  <Text style={styles.emptyText}>{t('home.noMusic')}</Text>
                 </View>
               )}
             </>
@@ -321,29 +318,32 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Layout.padding.md,
     paddingTop: Layout.padding.md,
     paddingBottom: Layout.padding.sm,
+    gap: Layout.padding.sm,
+  },
+  profileIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  profileInitial: {
+    color: Colors.background,
+    fontSize: 14,
+    fontWeight: '700',
   },
   greeting: {
     color: Colors.textPrimary,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIcon: {
-    marginLeft: Layout.padding.md,
-  },
-  filterRow: {
-    flexDirection: 'row',
     paddingHorizontal: Layout.padding.md,
-    paddingVertical: Layout.padding.sm,
-    gap: Layout.padding.sm,
+    paddingBottom: Layout.padding.sm,
   },
   filterChip: {
     paddingHorizontal: Layout.padding.md,
@@ -433,6 +433,34 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 11,
     marginTop: 2,
+  },
+  quickAccessGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Layout.padding.sm,
+    gap: Layout.padding.sm,
+    marginBottom: Layout.padding.md,
+  },
+  quickAccessCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: Layout.borderRadius.sm,
+    overflow: 'hidden',
+    width: '48.5%',
+    height: 56,
+  },
+  quickAccessArt: {
+    width: 56,
+    height: 56,
+    backgroundColor: Colors.surfaceElevated,
+  },
+  quickAccessTitle: {
+    color: Colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+    paddingHorizontal: Layout.padding.sm,
   },
   emptyState: {
     alignItems: 'center',

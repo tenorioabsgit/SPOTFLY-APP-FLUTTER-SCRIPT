@@ -46,6 +46,7 @@ function AppContent() {
           <Stack.Screen name="album/[name]" options={{ headerShown: false }} />
           <Stack.Screen name="artist/[name]" options={{ headerShown: false }} />
           <Stack.Screen name="upload" options={{ headerShown: false }} />
+          <Stack.Screen name="profile" options={{ headerShown: false }} />
         </Stack>
         {showGlobalMiniPlayer && (
           <View style={[styles.globalMiniPlayer, { bottom: insets.bottom }]}>

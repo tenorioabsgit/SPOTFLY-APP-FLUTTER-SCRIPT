@@ -105,6 +105,7 @@ export const translations = {
   'tab.home': { pt: 'Início', en: 'Home' },
   'tab.search': { pt: 'Buscar', en: 'Search' },
   'tab.library': { pt: 'Biblioteca', en: 'Library' },
+  'tab.create': { pt: 'Criar', en: 'Create' },
   'tab.profile': { pt: 'Perfil', en: 'Profile' },
   // ===== Artist =====
   'artist.albums': { pt: 'Álbuns', en: 'Albums' },
@@ -127,6 +128,44 @@ export const translations = {
   'album.syncRemove': { pt: 'Remover sincronização?', en: 'Remove sync?' },
   'album.synced': { pt: 'Sincronizado', en: 'Synced' },
   'album.syncProgress': { pt: 'Baixando', en: 'Downloading' },
+
+  // ===== Home extras =====
+  'home.quickAccess': { pt: 'Acesso rápido', en: 'Quick access' },
+  'home.noMusic': { pt: 'Nenhuma música ainda', en: 'No music yet' },
+
+  // ===== Search extras =====
+  'search.searchPlaceholder': { pt: 'Artistas, músicas ou playlists', en: 'Artists, songs or playlists' },
+  'search.songs': { pt: 'Músicas', en: 'Songs' },
+  'search.everything': { pt: 'Tudo', en: 'All' },
+  'search.noResults': { pt: 'Nenhum resultado para', en: 'No results for' },
+  'search.searching': { pt: 'Buscando...', en: 'Searching...' },
+
+  // ===== Library extras 2 =====
+  'library.all': { pt: 'Tudo', en: 'All' },
+  'library.downloaded': { pt: 'Baixados', en: 'Downloaded' },
+  'library.recent': { pt: 'Recentes', en: 'Recent' },
+  'library.az': { pt: 'A-Z', en: 'A-Z' },
+  'library.creator': { pt: 'Criador', en: 'Creator' },
+  'library.newPlaylist': { pt: 'Nova Playlist', en: 'New Playlist' },
+  'library.playlistName': { pt: 'Nome da playlist', en: 'Playlist name' },
+  'library.descriptionOptional': { pt: 'Descrição (opcional)', en: 'Description (optional)' },
+  'library.create': { pt: 'Criar', en: 'Create' },
+  'library.you': { pt: 'Você', en: 'You' },
+  'library.album': { pt: 'Álbum', en: 'Album' },
+  'library.playlist': { pt: 'Playlist', en: 'Playlist' },
+  'library.errorCreate': { pt: 'Não foi possível criar a playlist. Tente novamente.', en: 'Could not create playlist. Try again.' },
+  'library.errorName': { pt: 'Digite um nome para a playlist', en: 'Enter a playlist name' },
+
+  // ===== Profile extras =====
+  'profile.logoutConfirm': { pt: 'Deseja sair da sua conta?', en: 'Do you want to sign out?' },
+  'profile.cancel': { pt: 'Cancelar', en: 'Cancel' },
+  'profile.settings': { pt: 'Configurações', en: 'Settings' },
+  'profile.account': { pt: 'Conta', en: 'Account' },
+  'profile.version': { pt: 'Versão', en: 'Version' },
+
+  // ===== Common =====
+  'common.error': { pt: 'Erro', en: 'Error' },
+  'common.cancel': { pt: 'Cancelar', en: 'Cancel' },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

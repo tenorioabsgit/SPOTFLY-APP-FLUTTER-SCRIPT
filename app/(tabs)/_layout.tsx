@@ -72,6 +72,21 @@ export default function TabLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="create"
+          options={{
+            title: t('tab.create'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="add-circle" size={size} color={color} />
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              router.push('/upload');
+            },
+          }}
+        />
       </Tabs>
       {currentTrack && (
         <View style={[styles.miniPlayerContainer, { bottom: tabBarHeight }]}>
