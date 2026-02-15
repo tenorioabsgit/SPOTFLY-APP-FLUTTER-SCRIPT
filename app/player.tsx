@@ -16,7 +16,7 @@ import Slider from './components/Slider';
 import { usePlayer } from '../src/contexts/PlayerContext';
 import { Colors } from '../src/constants/Colors';
 import { Layout } from '../src/constants/Layout';
-import { formatDuration } from '../src/data/mockData';
+import { formatDuration } from '../src/utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = SCREEN_WIDTH - 80;

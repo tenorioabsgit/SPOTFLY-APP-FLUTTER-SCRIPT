@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Track } from '../types';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
-import { formatDuration } from '../data/mockData';
+import { formatDuration } from '../utils/format';
 import { usePlayer } from '../contexts/PlayerContext';
 
 interface TrackRowProps {

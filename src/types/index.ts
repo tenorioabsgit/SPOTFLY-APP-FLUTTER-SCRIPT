@@ -12,6 +12,9 @@ export interface Track {
   genre: string;
   license: string;
   addedAt?: number;
+  uploadedBy?: string;
+  uploadedByName?: string;
+  titleLower?: string;
 }
 
 export interface Album {

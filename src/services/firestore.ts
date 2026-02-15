@@ -67,22 +67,22 @@ export async function getPlaylist(playlistId: string): Promise<Playlist | null> 
 export async function getUserPlaylists(userId: string): Promise<Playlist[]> {
   const q = query(
     collection(db, 'playlists'),
-    where('createdBy', '==', userId),
-    orderBy('updatedAt', 'desc')
+    where('createdBy', '==', userId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => docToPlaylist(d.id, d.data()));
+  return snap.docs.map(d => docToPlaylist(d.id, d.data()))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function getPublicPlaylists(limitCount = 20): Promise<Playlist[]> {
   const q = query(
     collection(db, 'playlists'),
-    where('isPublic', '==', true),
-    orderBy('updatedAt', 'desc'),
-    limit(limitCount)
+    where('isPublic', '==', true)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => docToPlaylist(d.id, d.data()));
+  return snap.docs.map(d => docToPlaylist(d.id, d.data()))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, limitCount);
 }
 
 export async function updatePlaylist(playlistId: string, updates: Partial<Playlist>): Promise<void> {
@@ -129,11 +129,11 @@ export async function getTrackMetadata(trackId: string): Promise<Track | null> {
 export async function getUserTracks(userId: string): Promise<Track[]> {
   const q = query(
     collection(db, 'tracks'),
-    where('uploadedBy', '==', userId),
-    orderBy('addedAt', 'desc')
+    where('uploadedBy', '==', userId)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => docToTrack(d.id, d.data()));
+  return snap.docs.map(d => docToTrack(d.id, d.data()))
+    .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
 }
 
 export async function deleteTrackMetadata(trackId: string): Promise<void> {
@@ -168,12 +168,12 @@ export async function getAllTracks(limitCount = 100): Promise<Track[]> {
 export async function getAllCopyleftTracks(limitCount = 50): Promise<Track[]> {
   const q = query(
     collection(db, 'tracks'),
-    where('isLocal', '==', false),
-    orderBy('addedAt', 'desc'),
-    limit(limitCount)
+    where('isLocal', '==', false)
   );
   const snap = await getDocs(q);
-  return snap.docs.map(d => docToTrack(d.id, d.data()));
+  return snap.docs.map(d => docToTrack(d.id, d.data()))
+    .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
+    .slice(0, limitCount);
 }
 
 // ============================================================
@@ -246,5 +246,8 @@ function docToTrack(id: string, data: any): Track {
     genre: data.genre || '',
     license: data.license || '',
     addedAt: data.addedAt instanceof Timestamp ? data.addedAt.toMillis() : data.addedAt,
+    uploadedBy: data.uploadedBy || '',
+    uploadedByName: data.uploadedByName || '',
+    titleLower: data.titleLower || '',
   };
 }

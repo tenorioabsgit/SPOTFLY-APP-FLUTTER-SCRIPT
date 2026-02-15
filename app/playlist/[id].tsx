@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
 import { usePlayer } from '../../src/contexts/PlayerContext';
-import { formatDuration } from '../../src/data/mockData';
+import { formatDuration } from '../../src/utils/format';
 import { Playlist, Track } from '../../src/types';
 import TrackRow from '../../src/components/TrackRow';
 import { loadData, saveData, KEYS } from '../../src/services/storage';

@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { usePlayer } from '../contexts/PlayerContext';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
-import { formatDuration } from '../data/mockData';
+import { formatDuration } from '../utils/format';
 
 export default function MiniPlayer() {
   const { currentTrack, isPlaying, togglePlay, position, duration } = usePlayer();

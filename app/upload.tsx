@@ -195,15 +195,12 @@ export default function UploadScreen() {
           genre: albumGenre.trim() || 'Outro',
           license: 'Copyleft - Livre para compartilhar',
           addedAt: Date.now(),
-        };
-
-        await saveTrackMetadata({
-          ...newTrack,
-          // @ts-ignore
           uploadedBy: user.id,
           uploadedByName: user.displayName || 'Anônimo',
-          titleLower: newTrack.title.toLowerCase(),
-        } as any);
+          titleLower: (file.title.trim() || file.name).toLowerCase(),
+        };
+
+        await saveTrackMetadata(newTrack);
 
         uploaded.push(newTrack);
       }

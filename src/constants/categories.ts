@@ -1,0 +1,18 @@
+export const searchCategories = [
+  { id: 'cat-1', name: 'Ambient', color: '#27856A' },
+  { id: 'cat-2', name: 'Cinematic', color: '#1E3264' },
+  { id: 'cat-3', name: 'Classical', color: '#8400E7' },
+  { id: 'cat-4', name: 'Electronic', color: '#E13300' },
+  { id: 'cat-5', name: 'Folk', color: '#503750' },
+  { id: 'cat-6', name: 'Indie', color: '#E8115B' },
+  { id: 'cat-7', name: 'Jazz', color: '#477D95' },
+  { id: 'cat-8', name: 'Piano', color: '#B02897' },
+  { id: 'cat-9', name: 'Pop', color: '#DC148C' },
+  { id: 'cat-10', name: 'Rock', color: '#E91429' },
+  { id: 'cat-11', name: 'World', color: '#A56752' },
+  { id: 'cat-12', name: 'Experimental', color: '#8C67AB' },
+  { id: 'cat-13', name: 'Orchestral', color: '#537AA1' },
+  { id: 'cat-14', name: 'Chillout', color: '#148A08' },
+  { id: 'cat-15', name: 'Epic', color: '#1DB954' },
+  { id: 'cat-16', name: 'Minimalist', color: '#E1118C' },
+];

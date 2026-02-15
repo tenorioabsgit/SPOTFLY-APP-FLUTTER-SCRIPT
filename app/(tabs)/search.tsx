@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/Colors';
 import { Layout } from '../../src/constants/Layout';
-import { searchCategories } from '../../src/data/mockData';
+import { searchCategories } from '../../src/constants/categories';
 import { searchTracksByTitle } from '../../src/services/firestore';
 import { Track } from '../../src/types';
 import CategoryCard from '../../src/components/CategoryCard';
