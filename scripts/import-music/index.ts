@@ -15,10 +15,10 @@ async function main() {
   const db = initFirebaseAdmin();
   log('main', 'Firebase Admin initialized');
 
-  // Fetch from all sources concurrently
+  // Fetch from all sources concurrently (pass db for state persistence)
   const results = await Promise.allSettled([
-    fetchJamendo(),
-    fetchInternetArchive(),
+    fetchJamendo(db),
+    fetchInternetArchive(db),
     fetchCCMixter(),
   ]);
 
