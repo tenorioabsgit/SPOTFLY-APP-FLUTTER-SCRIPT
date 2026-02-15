@@ -281,18 +281,14 @@ export default function LibraryScreen() {
         />
       )}
 
-      {/* Profile Menu Modal */}
-      <Modal
-        visible={showProfileMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowProfileMenu(false)}
-      >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowProfileMenu(false)}
-        >
+      {/* Profile Menu Dropdown */}
+      {showProfileMenu && (
+        <>
+          <TouchableOpacity
+            style={styles.menuBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowProfileMenu(false)}
+          />
           <View style={styles.menuContainer}>
             {/* Profile Info */}
             <View style={styles.menuProfile}>
@@ -342,8 +338,8 @@ export default function LibraryScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        </>
+      )}
 
       {/* Create Playlist Modal */}
       <Modal
@@ -560,19 +556,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: Colors.overlay,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    paddingTop: 60,
-    paddingLeft: Layout.padding.md,
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 98,
   },
   menuContainer: {
+    position: 'absolute',
+    top: 55,
+    left: Layout.padding.md,
     backgroundColor: Colors.surfaceElevated,
     borderRadius: Layout.borderRadius.lg,
     padding: Layout.padding.md,
     width: 280,
+    zIndex: 99,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
