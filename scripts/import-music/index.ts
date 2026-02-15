@@ -1,6 +1,6 @@
 import { initFirebaseAdmin } from './firebaseAdmin';
 import { fetchJamendo } from './sources/jamendo';
-import { fetchInternetArchive } from './sources/internetArchive';
+
 import { fetchCCMixter } from './sources/ccmixter';
 import { TrackRecord, ImportStats, SourceResult } from './types';
 import { log, validateTrack } from './utils';
@@ -18,7 +18,6 @@ async function main() {
   // Fetch from all sources concurrently (pass db for state persistence)
   const results = await Promise.allSettled([
     fetchJamendo(db),
-    fetchInternetArchive(db),
     fetchCCMixter(),
   ]);
 
@@ -73,7 +72,6 @@ async function main() {
   // Update per-source stats
   const sourcePrefixMap: Record<string, string> = {
     jamendo: 'jamendo-',
-    'internet-archive': 'ia-',
     ccmixter: 'ccmixter-',
   };
   for (const stat of allStats) {
