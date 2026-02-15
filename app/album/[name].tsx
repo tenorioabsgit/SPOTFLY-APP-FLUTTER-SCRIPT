@@ -35,8 +35,11 @@ import {
 import { uploadPlaylistCover } from '../../src/services/cloudStorage';
 import {
   downloadAlbum,
+  downloadTrack,
   isAlbumSynced,
+  isTrackOffline,
   removeOfflineAlbum,
+  removeOfflineTrack,
 } from '../../src/services/offlineStorage';
 
 export default function AlbumScreen() {
@@ -60,6 +63,8 @@ export default function AlbumScreen() {
   const [synced, setSynced] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState({ done: 0, total: 0 });
+  const [offlineMap, setOfflineMap] = useState<Record<string, boolean>>({});
+  const [syncingTrackId, setSyncingTrackId] = useState<string | null>(null);
 
   // Swipe animation
   const panX = useRef(new Animated.Value(0)).current;
@@ -109,8 +114,13 @@ export default function AlbumScreen() {
 
   async function checkSyncStatus() {
     if (tracks.length === 0) return;
-    const isSynced = await isAlbumSynced(tracks.map(t => t.id));
-    setSynced(isSynced);
+    const map: Record<string, boolean> = {};
+    for (const track of tracks) {
+      map[track.id] = await isTrackOffline(track.id);
+    }
+    setOfflineMap(map);
+    const allSynced = tracks.every(t => map[t.id]);
+    setSynced(allSynced);
   }
 
   const isOwner = tracks.length > 0 && tracks[0].uploadedBy === user?.id;
@@ -226,6 +236,7 @@ export default function AlbumScreen() {
           onPress: async () => {
             await removeOfflineAlbum(tracks);
             setSynced(false);
+            setOfflineMap({});
           },
         },
       ]);
@@ -243,16 +254,51 @@ export default function AlbumScreen() {
             await downloadAlbum(tracks, (done, total) => {
               setSyncProgress({ done, total });
             });
-            setSynced(true);
+            await checkSyncStatus();
             Alert.alert(t('album.syncComplete'));
           } catch (e) {
             console.error('Error syncing album:', e);
+            await checkSyncStatus();
           } finally {
             setIsSyncing(false);
           }
         },
       },
     ]);
+  }
+
+  // ── Individual Track Sync ──
+  async function handleTrackSync(track: Track) {
+    if (offlineMap[track.id]) {
+      Alert.alert(t('album.synced'), t('album.syncRemove'), [
+        { text: t('album.cancel'), style: 'cancel' },
+        {
+          text: t('album.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            await removeOfflineTrack(track.id);
+            await checkSyncStatus();
+          },
+        },
+      ]);
+      return;
+    }
+
+    if (!track.audioUrl) return;
+    setSyncingTrackId(track.id);
+    try {
+      await Promise.race([
+        downloadTrack(track),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Download timeout')), 60000)
+        ),
+      ]);
+      await checkSyncStatus();
+    } catch (e) {
+      console.error('Error syncing track:', e);
+    } finally {
+      setSyncingTrackId(null);
+    }
   }
 
   // ── Render ──
@@ -405,6 +451,9 @@ export default function AlbumScreen() {
             trackList={tracks}
             index={index}
             showIndex
+            isOffline={!!offlineMap[item.id]}
+            isSyncingTrack={syncingTrackId === item.id}
+            onSyncPress={Platform.OS !== 'web' ? handleTrackSync : undefined}
           />
         )}
         ListFooterComponent={

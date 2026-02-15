@@ -72,9 +72,23 @@ export async function downloadAlbum(
     }
   }
 
+  if (tracksToDownload.length === 0) {
+    onProgress?.(0, 0);
+    return;
+  }
+
   let done = 0;
   for (const track of tracksToDownload) {
-    await downloadTrack(track);
+    try {
+      await Promise.race([
+        downloadTrack(track),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Download timeout')), 60000)
+        ),
+      ]);
+    } catch (e) {
+      console.warn(`Failed to download track ${track.title}:`, e);
+    }
     done++;
     onProgress?.(done, tracksToDownload.length);
   }

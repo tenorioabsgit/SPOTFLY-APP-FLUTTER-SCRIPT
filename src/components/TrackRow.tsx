@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Track } from '../types';
 import { Colors } from '../constants/Colors';
@@ -13,6 +13,9 @@ interface TrackRowProps {
   index?: number;
   showArtwork?: boolean;
   showIndex?: boolean;
+  isOffline?: boolean;
+  isSyncingTrack?: boolean;
+  onSyncPress?: (track: Track) => void;
   onOptionsPress?: (track: Track) => void;
 }
 
@@ -22,6 +25,9 @@ export default function TrackRow({
   index,
   showArtwork = true,
   showIndex = false,
+  isOffline = false,
+  isSyncingTrack = false,
+  onSyncPress,
   onOptionsPress,
 }: TrackRowProps) {
   const { currentTrack, isPlaying, playTrack } = usePlayer();
@@ -56,10 +62,31 @@ export default function TrackRow({
         >
           {track.title}
         </Text>
-        <Text style={styles.artist} numberOfLines={1}>
-          {track.artist}
-        </Text>
+        <View style={styles.subtitleRow}>
+          {isOffline && (
+            <Ionicons name="arrow-down-circle" size={12} color={Colors.primary} style={styles.offlineIcon} />
+          )}
+          <Text style={styles.artist} numberOfLines={1}>
+            {track.artist}
+          </Text>
+        </View>
       </View>
+
+      {onSyncPress && (
+        <TouchableOpacity
+          style={styles.syncButton}
+          onPress={() => onSyncPress(track)}
+          disabled={isSyncingTrack}
+        >
+          {isSyncingTrack ? (
+            <ActivityIndicator size={16} color={Colors.primary} />
+          ) : isOffline ? (
+            <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+          ) : (
+            <Ionicons name="arrow-down-circle-outline" size={18} color={Colors.textSecondary} />
+          )}
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.duration}>{formatDuration(track.duration)}</Text>
 
@@ -107,15 +134,26 @@ const styles = StyleSheet.create({
   activeText: {
     color: Colors.primary,
   },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  offlineIcon: {
+    marginRight: 4,
+  },
   artist: {
     color: Colors.textSecondary,
     fontSize: 13,
-    marginTop: 2,
   },
   duration: {
     color: Colors.textSecondary,
     fontSize: 12,
     marginLeft: Layout.padding.sm,
+  },
+  syncButton: {
+    padding: Layout.padding.xs,
+    marginLeft: Layout.padding.xs,
   },
   optionsButton: {
     padding: Layout.padding.sm,

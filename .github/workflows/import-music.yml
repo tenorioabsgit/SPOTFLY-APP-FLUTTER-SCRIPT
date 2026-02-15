@@ -1,0 +1,30 @@
+name: Import Copyleft Music
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # 04:00 UTC = 01:00 BRT
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run music import
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
+        run: npx tsx scripts/import-music/index.ts
