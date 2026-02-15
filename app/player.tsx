@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Image,
   Dimensions,
   Share,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -38,6 +40,33 @@ export default function PlayerScreen() {
   } = usePlayer();
   const router = useRouter();
   const [liked, setLiked] = useState(false);
+
+  const panX = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 15 && Math.abs(gs.dy) < 30,
+      onPanResponderMove: Animated.event([null, { dx: panX }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -50) {
+          Animated.spring(panX, { toValue: -SCREEN_WIDTH, useNativeDriver: false }).start(() => {
+            nextTrack();
+            panX.setValue(0);
+          });
+        } else if (gs.dx > 50) {
+          Animated.spring(panX, { toValue: SCREEN_WIDTH, useNativeDriver: false }).start(() => {
+            previousTrack();
+            panX.setValue(0);
+          });
+        } else {
+          Animated.spring(panX, { toValue: 0, useNativeDriver: false }).start();
+        }
+      },
+    })
+  ).current;
 
   if (!currentTrack) {
     return (
@@ -84,10 +113,15 @@ export default function PlayerScreen() {
 
         {/* Artwork */}
         <View style={styles.artworkContainer}>
-          <Image
-            source={{ uri: currentTrack.artwork }}
-            style={styles.artwork}
-          />
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={{ transform: [{ translateX: panX }] }}
+          >
+            <Image
+              source={{ uri: currentTrack.artwork }}
+              style={styles.artwork}
+            />
+          </Animated.View>
         </View>
 
         {/* Track Info */}
