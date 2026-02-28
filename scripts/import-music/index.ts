@@ -1,5 +1,6 @@
-import { initFirebaseAdmin } from './firebaseAdmin';
+import { initFirebaseAdmin, getStorageBucket } from './firebaseAdmin';
 import { fetchJamendo } from './sources/jamendo';
+import { uploadTrackMedia } from './storage';
 import { TrackRecord, ImportStats, SourceResult } from './types';
 import { log, validateTrack } from './utils';
 import * as admin from 'firebase-admin';
@@ -76,6 +77,42 @@ async function main() {
     const sourceNew = newTracks.filter(t => t.id.startsWith(prefix));
     stat.newTracks = sourceNew.length;
     stat.skippedDuplicates = sourceTracks.length - sourceNew.length;
+  }
+
+  // Upload media to Firebase Storage for new tracks
+  if (newTracks.length > 0 && process.env.DRY_RUN !== '1') {
+    const bucket = getStorageBucket();
+    log('main', `Uploading ${newTracks.length} tracks to Firebase Storage...`);
+
+    const UPLOAD_CONCURRENCY = 3;
+    let uploaded = 0;
+    let kept = 0;
+
+    for (let i = 0; i < newTracks.length; i += UPLOAD_CONCURRENCY) {
+      const chunk = newTracks.slice(i, i + UPLOAD_CONCURRENCY);
+      await Promise.allSettled(
+        chunk.map(async (track) => {
+          const result = await uploadTrackMedia(
+            bucket,
+            track.id,
+            track.audioUrl,
+            track.artwork
+          );
+          if (result) {
+            track.originalAudioUrl = result.originalAudioUrl;
+            track.originalArtwork = result.originalArtwork;
+            track.audioUrl = result.audioUrl;
+            track.artwork = result.artwork;
+            uploaded++;
+          } else {
+            log('main', `WARN: Could not upload ${track.id} to Storage, keeping Jamendo URL`);
+            kept++;
+          }
+        })
+      );
+    }
+
+    log('main', `Storage upload complete: ${uploaded} uploaded, ${kept} kept original URL`);
   }
 
   // Write new tracks (or dry run)

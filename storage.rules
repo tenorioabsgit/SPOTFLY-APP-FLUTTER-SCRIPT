@@ -2,6 +2,16 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Spotfly copyleft audio (uploaded by Admin SDK)
+    match /spotfly-audio/{trackFile} {
+      allow read: if request.auth != null;
+    }
+
+    // Spotfly copyleft artwork (uploaded by Admin SDK)
+    match /spotfly-artwork/{trackFile} {
+      allow read: if request.auth != null;
+    }
+
     // Music files - users can upload/read their own
     match /music/{userId}/{allPaths=**} {
       allow read: if request.auth != null;

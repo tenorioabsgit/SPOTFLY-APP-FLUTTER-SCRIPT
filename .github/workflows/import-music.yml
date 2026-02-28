@@ -6,10 +6,24 @@ on:
     - cron: '0 6 * * *'  # 06:00 UTC = 03:00 BRT
     - cron: '0 12 * * *' # 12:00 UTC = 09:00 BRT
     - cron: '0 18 * * *' # 18:00 UTC = 15:00 BRT
-  workflow_dispatch: # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      run_migration:
+        description: 'Run storage migration instead of import'
+        type: boolean
+        default: false
+      migration_limit:
+        description: 'Max tracks to migrate per run'
+        type: string
+        default: '150'
+      start_after:
+        description: 'Resume migration after this track ID'
+        type: string
+        default: ''
 
 jobs:
   import:
+    if: ${{ github.event_name == 'schedule' || !inputs.run_migration }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -31,3 +45,28 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
         run: npx tsx scripts/import-music/index.ts
+
+  migrate:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_migration }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run storage migration
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LIMIT: ${{ inputs.migration_limit }}
+          START_AFTER: ${{ inputs.start_after }}
+        run: npx tsx scripts/import-music/migrate-to-storage.ts

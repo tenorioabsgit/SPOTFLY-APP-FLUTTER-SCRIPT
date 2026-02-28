@@ -6,6 +6,8 @@
   "scripts": {
     "import-music": "npx tsx scripts/import-music/index.ts",
     "import-music:dry-run": "DRY_RUN=1 npx tsx scripts/import-music/index.ts",
+    "migrate-storage": "npx tsx scripts/import-music/migrate-to-storage.ts",
+    "migrate-storage:dry-run": "DRY_RUN=1 npx tsx scripts/import-music/migrate-to-storage.ts",
     "seed-admin": "npx tsx scripts/seed-admin.ts"
   },
   "dependencies": {

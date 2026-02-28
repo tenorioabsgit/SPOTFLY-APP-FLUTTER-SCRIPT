@@ -14,6 +14,8 @@ export interface TrackRecord {
   uploadedBy: string;
   uploadedByName: string;
   titleLower: string;
+  originalAudioUrl?: string;
+  originalArtwork?: string;
 }
 
 export interface SourceResult {
