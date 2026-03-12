@@ -34,6 +34,77 @@ export function validateTrack(track: TrackRecord): boolean {
   return true;
 }
 
+// ── SFX / production-music detection ────────────────────────────────────────
+// Genres that are NOT real songs (jingles, logos, stingers, production beds…)
+const SFX_GENRES = new Set([
+  'logo', 'stinger', 'jingle', 'intro', 'trailer',
+  'production', 'loop', 'musicbed', 'kidsquirky',
+]);
+
+const SFX_TITLE_PATTERNS: RegExp[] = [
+  /\bsfx\b/i,
+  /\bsound\s*effect/i,
+  /\bsound\s*fx\b/i,
+  /\blogo\b/i,
+  /\bident\b/i,
+  /\bstinger\b/i,
+  /\btrailer\b/i,
+  /\b\d+\s*sec(ond)?s?\b/i,            // "15 sec", "30 seconds"
+  /\bshort\s*(version|edit|mix)\b/i,
+  /\bfoley\b/i,
+];
+
+const SFX_ARTIST_PATTERNS: RegExp[] = [
+  /\bsound\s*effect/i,
+  /\bsfx\b/i,
+  /\bsound\s*library/i,
+  /\baudio\s*library/i,
+  /\bfree\s*sound/i,
+  /\bzapsplat/i,
+  /\bpixabay/i,
+  /\bsound\s*design/i,
+  /\bfoley\b/i,
+  /\bstock\s*audio/i,
+];
+
+/**
+ * Returns `true` when a track looks like a sound effect, jingle, logo,
+ * stinger, production bed, or any other non-song audio.
+ */
+export function isSfxTrack(track: {
+  title?: string;
+  artist?: string;
+  album?: string;
+  genre?: string;
+  duration?: number;
+}): boolean {
+  const genre = (track.genre || '').toLowerCase().replace(/[\s-]/g, '');
+
+  if (SFX_GENRES.has(genre)) return true;
+
+  const artist = track.artist || '';
+  for (const pat of SFX_ARTIST_PATTERNS) {
+    if (pat.test(artist)) return true;
+  }
+
+  const title = track.title || '';
+  for (const pat of SFX_TITLE_PATTERNS) {
+    if (pat.test(title)) return true;
+  }
+
+  const duration = track.duration || 0;
+  if (duration > 0 && duration <= 15) return true;
+
+  if (duration > 0 && duration <= 30) {
+    const album = track.album || '';
+    if (/\b(loop|bed|background|vlog|reel|tiktok|podcast|corporate)\b/i.test(album)) return true;
+    if (/\b(loop|bed|background|vlog|reel|tiktok|podcast|corporate)\b/i.test(title)) return true;
+  }
+
+  return false;
+}
+
+// ── Rock genre detection ────────────────────────────────────────────────────
 const ROCK_GENRES = new Set([
   'rock', 'metal', 'punk', 'hardcore', 'hardrock', 'hard rock',
   'progressive', 'progressive rock', 'grunge', 'alternative',

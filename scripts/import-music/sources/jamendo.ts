@@ -1,5 +1,5 @@
 import { TrackRecord, SourceResult } from '../types';
-import { sanitizeTrack, sleep, log, isRockGenre } from '../utils';
+import { sanitizeTrack, sleep, log, isRockGenre, isSfxTrack } from '../utils';
 import * as admin from 'firebase-admin';
 
 const SOURCE = 'jamendo';
@@ -97,6 +97,7 @@ export async function fetchJamendo(
   // Strategy 1: Fetch by genre rotation (5 genres per run, 5 pages each)
   const genresToFetch = 5;
   let requestCount = 0;
+  let sfxSkipped = 0;
 
   for (let g = 0; g < genresToFetch; g++) {
     const genreIdx = (state.genreIndex + g) % GENRES.length;
@@ -132,6 +133,19 @@ export async function fetchJamendo(
           if (seen.has(id)) continue;
           seen.add(id);
 
+          const trackGenre = t.musicinfo?.tags?.genres?.[0] || genre;
+          const candidate = {
+            title: t.name,
+            artist: t.artist_name,
+            album: t.album_name,
+            genre: trackGenre,
+            duration: t.duration,
+          };
+          if (isSfxTrack(candidate)) {
+            sfxSkipped++;
+            continue;
+          }
+
           tracks.push(
             sanitizeTrack({
               id,
@@ -143,7 +157,7 @@ export async function fetchJamendo(
               duration: t.duration,
               artwork: t.album_image || t.image || '',
               audioUrl: t.audio || t.audiodownload,
-              genre: t.musicinfo?.tags?.genres?.[0] || genre,
+              genre: trackGenre,
               license: t.license_ccurl || 'Creative Commons',
             })
           );
@@ -177,10 +191,22 @@ export async function fetchJamendo(
       for (const t of data.results) {
         if (!t.audio && !t.audiodownload) continue;
         const trackGenre = t.musicinfo?.tags?.genres?.[0] || '';
-        if (!isRockGenre(trackGenre)) continue; // Skip non-rock tracks
+        if (!isRockGenre(trackGenre)) continue;
         const id = `jamendo-${t.id}`;
         if (seen.has(id)) continue;
         seen.add(id);
+
+        const candidate = {
+          title: t.name,
+          artist: t.artist_name,
+          album: t.album_name,
+          genre: trackGenre,
+          duration: t.duration,
+        };
+        if (isSfxTrack(candidate)) {
+          sfxSkipped++;
+          continue;
+        }
 
         tracks.push(
           sanitizeTrack({
@@ -222,6 +248,6 @@ export async function fetchJamendo(
     }
   }
 
-  log(SOURCE, `Fetched ${tracks.length} unique tracks (${requestCount} API calls, ${errors.length} errors)`);
+  log(SOURCE, `Fetched ${tracks.length} unique tracks (${requestCount} API calls, ${sfxSkipped} SFX skipped, ${errors.length} errors)`);
   return { sourceName: SOURCE, tracks, errors };
 }
