@@ -20,6 +20,10 @@ on:
         description: 'Resume migration after this track ID'
         type: string
         default: ''
+      dry_run:
+        description: 'Dry run: fetch/log only, skip Storage upload and Firestore writes'
+        type: boolean
+        default: false
 
 jobs:
   import:
@@ -44,6 +48,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
+          DRY_RUN: ${{ (inputs.dry_run && '1') || '' }}
         run: npx tsx scripts/import-music/index.ts
 
   migrate:
