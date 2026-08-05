@@ -2,20 +2,16 @@ export interface TrackRecord {
   id: string;
   title: string;
   artist: string;
-  artistId: string;
+  artist_id: string;
   album: string;
-  albumId: string;
+  album_id: string;
   duration: number;
   artwork: string;
-  audioUrl: string;
-  isLocal: boolean;
+  audio_url: string;
+  is_local: boolean;
   genre: string;
   license: string;
-  uploadedBy: string;
-  uploadedByName: string;
-  titleLower: string;
-  originalAudioUrl?: string;
-  originalArtwork?: string;
+  source: string;
 }
 
 export interface SourceResult {

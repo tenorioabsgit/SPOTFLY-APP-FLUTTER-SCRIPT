@@ -5,30 +5,28 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export function sanitizeTrack(
-  partial: Partial<TrackRecord> & { id: string; audioUrl: string }
+  partial: Partial<TrackRecord> & { id: string; audio_url: string }
 ): TrackRecord {
   return {
     id: partial.id,
     title: partial.title || 'Unknown Title',
     artist: partial.artist || 'Unknown Artist',
-    artistId: partial.artistId || '',
+    artist_id: partial.artist_id || '',
     album: partial.album || 'Singles',
-    albumId: partial.albumId || '',
+    album_id: partial.album_id || '',
     duration: partial.duration || 0,
     artwork: partial.artwork || '',
-    audioUrl: partial.audioUrl,
-    isLocal: false,
+    audio_url: partial.audio_url,
+    is_local: false,
     genre: partial.genre || 'Other',
     license: partial.license || 'Creative Commons',
-    uploadedBy: 'system-import',
-    uploadedByName: 'Spotfly Bot',
-    titleLower: (partial.title || 'unknown title').toLowerCase(),
+    source: 'jamendo',
   };
 }
 
 export function validateTrack(track: TrackRecord): boolean {
   if (!track.id || track.id.length > 128) return false;
-  if (!track.audioUrl || !track.audioUrl.startsWith('http')) return false;
+  if (!track.audio_url || !track.audio_url.startsWith('http')) return false;
   if (!track.title) return false;
   if (!track.artwork || !track.artwork.startsWith('http')) return false;
   return true;
