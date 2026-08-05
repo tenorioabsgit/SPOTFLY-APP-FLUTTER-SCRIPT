@@ -75,9 +75,10 @@ async function main() {
     log('main', `Uploading ${newTracks.length} tracks to Supabase Storage...`);
 
     const UPLOAD_CONCURRENCY = 3;
+    const WRITE_FLUSH_SIZE = 50;
     let uploaded = 0;
     let skipped = 0;
-    const readyToWrite: TrackRecord[] = [];
+    let pending: TrackRecord[] = [];
 
     for (let i = 0; i < newTracks.length; i += UPLOAD_CONCURRENCY) {
       const chunk = newTracks.slice(i, i + UPLOAD_CONCURRENCY);
@@ -87,7 +88,7 @@ async function main() {
           if (result) {
             track.audio_url = result.audioUrl;
             track.artwork = result.artwork;
-            readyToWrite.push(track);
+            pending.push(track);
             uploaded++;
           } else {
             log('main', `WARN: Could not upload ${track.id} to Storage, skipping`);
@@ -95,14 +96,20 @@ async function main() {
           }
         })
       );
+
+      if (pending.length >= WRITE_FLUSH_SIZE) {
+        await upsertTracks(client, pending);
+        writtenCount += pending.length;
+        pending = [];
+      }
+    }
+
+    if (pending.length > 0) {
+      await upsertTracks(client, pending);
+      writtenCount += pending.length;
     }
 
     log('main', `Storage upload complete: ${uploaded} uploaded, ${skipped} skipped`);
-
-    if (readyToWrite.length > 0) {
-      await upsertTracks(client, readyToWrite);
-      writtenCount = readyToWrite.length;
-    }
   } else if (process.env.DRY_RUN === '1') {
     log('main', `[DRY RUN] Would write ${newTracks.length} tracks`);
     for (const t of newTracks.slice(0, 5)) {
