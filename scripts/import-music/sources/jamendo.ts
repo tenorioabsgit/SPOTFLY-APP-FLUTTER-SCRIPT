@@ -74,7 +74,7 @@ export async function fetchJamendo(
   const errors: string[] = [];
   const seen = new Set<string>();
 
-  // Load state from Firestore
+  // Load state from Supabase
   let state: JamendoState = {
     genreIndex: 0,
     sortIndex: 0,
@@ -239,21 +239,25 @@ export async function fetchJamendo(
     }
   }
 
-  // Save updated state
-  try {
-    const genreIndex = (state.genreIndex + genresToFetch) % GENRES.length;
-    const globalOffset = state.globalOffset + globalPages * PAGE_SIZE;
-    const { error } = await client.from('import_state').upsert({
-      source: SOURCE,
-      genre_index: genreIndex,
-      sort_index: (state.sortIndex + 1) % SORT_ORDERS.length,
-      global_offset: globalOffset,
-      last_run: new Date().toISOString(),
-    });
-    if (error) throw error;
-    log(SOURCE, `State saved: genreIdx=${genreIndex}, globalOffset=${globalOffset}`);
-  } catch (e) {
-    log(SOURCE, `Could not save state: ${(e as Error).message}`);
+  // Save updated state (skipped entirely in DRY_RUN so a dry run never advances pagination)
+  if (process.env.DRY_RUN === '1') {
+    log(SOURCE, 'DRY RUN: state not saved');
+  } else {
+    try {
+      const genreIndex = (state.genreIndex + genresToFetch) % GENRES.length;
+      const globalOffset = state.globalOffset + globalPages * PAGE_SIZE;
+      const { error } = await client.from('import_state').upsert({
+        source: SOURCE,
+        genre_index: genreIndex,
+        sort_index: (state.sortIndex + 1) % SORT_ORDERS.length,
+        global_offset: globalOffset,
+        last_run: new Date().toISOString(),
+      });
+      if (error) throw error;
+      log(SOURCE, `State saved: genreIdx=${genreIndex}, globalOffset=${globalOffset}`);
+    } catch (e) {
+      log(SOURCE, `Could not save state: ${(e as Error).message}`);
+    }
   }
 
   log(SOURCE, `Fetched ${tracks.length} unique tracks (${requestCount} API calls, ${sfxSkipped} SFX skipped, ${errors.length} errors)`);

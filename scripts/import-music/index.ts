@@ -5,7 +5,7 @@ import { TrackRecord, ImportStats, SourceResult } from './types';
 import { log, validateTrack } from './utils';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-const EXISTENCE_CHECK_CHUNK = 500;
+const EXISTENCE_CHECK_CHUNK = 200;
 const WRITE_BATCH_SIZE = 500;
 
 async function main() {
@@ -75,12 +75,17 @@ async function main() {
     log('main', `Uploading ${newTracks.length} tracks to Supabase Storage...`);
 
     const UPLOAD_CONCURRENCY = 3;
-    const WRITE_FLUSH_SIZE = 50;
+    const WRITE_FLUSH_SIZE = 10;
+    const DEADLINE_MS = 16 * 60 * 1000; // stay under the workflow's timeout-minutes: 20
     let uploaded = 0;
     let skipped = 0;
     let pending: TrackRecord[] = [];
 
     for (let i = 0; i < newTracks.length; i += UPLOAD_CONCURRENCY) {
+      if (Date.now() - startTime > DEADLINE_MS) {
+        log('main', `Time budget reached at ${i}/${newTracks.length} tracks; stopping early for a clean exit`);
+        break;
+      }
       const chunk = newTracks.slice(i, i + UPLOAD_CONCURRENCY);
       await Promise.allSettled(
         chunk.map(async (track) => {
@@ -100,6 +105,7 @@ async function main() {
       if (pending.length >= WRITE_FLUSH_SIZE) {
         await upsertTracks(client, pending);
         writtenCount += pending.length;
+        log('main', `Progress: ${writtenCount}/${newTracks.length} tracks written`);
         pending = [];
       }
     }
@@ -107,6 +113,7 @@ async function main() {
     if (pending.length > 0) {
       await upsertTracks(client, pending);
       writtenCount += pending.length;
+      log('main', `Progress: ${writtenCount}/${newTracks.length} tracks written`);
     }
 
     log('main', `Storage upload complete: ${uploaded} uploaded, ${skipped} skipped`);

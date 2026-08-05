@@ -17,6 +17,11 @@ jobs:
   import:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+    concurrency:
+      group: import-music
+      cancel-in-progress: false
 
     steps:
       - name: Checkout repository
