@@ -1,12 +1,11 @@
 import { TrackRecord, SourceResult } from '../types';
 import { sanitizeTrack, sleep, log, isRockGenre, isSfxTrack } from '../utils';
-import * as admin from 'firebase-admin';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const SOURCE = 'jamendo';
 const BASE_URL = 'https://api.jamendo.com/v3.0/tracks/';
 const PAGE_SIZE = 200;
 const PAGES_PER_GENRE = 5; // 1.000 tracks per genre
-const STATE_DOC = 'import-state/jamendo';
 
 // Rock-related genres only
 const GENRES = [
@@ -60,7 +59,7 @@ interface JamendoState {
 }
 
 export async function fetchJamendo(
-  db?: admin.firestore.Firestore
+  client: SupabaseClient
 ): Promise<SourceResult> {
   const clientId = process.env.JAMENDO_CLIENT_ID;
   if (!clientId) {
@@ -83,15 +82,23 @@ export async function fetchJamendo(
     lastRun: '',
   };
 
-  if (db) {
-    try {
-      const stateDoc = await db.doc(STATE_DOC).get();
-      if (stateDoc.exists) {
-        state = stateDoc.data() as JamendoState;
-      }
-    } catch (e) {
-      log(SOURCE, `Could not load state: ${(e as Error).message}`);
+  try {
+    const { data, error } = await client
+      .from('import_state')
+      .select('genre_index, sort_index, global_offset, last_run')
+      .eq('source', SOURCE)
+      .maybeSingle();
+    if (error) throw error;
+    if (data) {
+      state = {
+        genreIndex: data.genre_index,
+        sortIndex: data.sort_index,
+        globalOffset: data.global_offset,
+        lastRun: data.last_run,
+      };
     }
+  } catch (e) {
+    log(SOURCE, `Could not load state: ${(e as Error).message}`);
   }
 
   // Strategy 1: Fetch by genre rotation (5 genres per run, 5 pages each)
@@ -151,12 +158,12 @@ export async function fetchJamendo(
               id,
               title: t.name,
               artist: t.artist_name,
-              artistId: `jamendo-artist-${t.artist_id}`,
+              artist_id: `jamendo-artist-${t.artist_id}`,
               album: t.album_name || 'Singles',
-              albumId: t.album_id ? `jamendo-album-${t.album_id}` : '',
+              album_id: t.album_id ? `jamendo-album-${t.album_id}` : '',
               duration: t.duration,
               artwork: t.album_image || t.image || '',
-              audioUrl: t.audio || t.audiodownload,
+              audio_url: t.audio || t.audiodownload,
               genre: trackGenre,
               license: t.license_ccurl || 'Creative Commons',
             })
@@ -213,12 +220,12 @@ export async function fetchJamendo(
             id,
             title: t.name,
             artist: t.artist_name,
-            artistId: `jamendo-artist-${t.artist_id}`,
+            artist_id: `jamendo-artist-${t.artist_id}`,
             album: t.album_name || 'Singles',
-            albumId: t.album_id ? `jamendo-album-${t.album_id}` : '',
+            album_id: t.album_id ? `jamendo-album-${t.album_id}` : '',
             duration: t.duration,
             artwork: t.album_image || t.image || '',
-            audioUrl: t.audio || t.audiodownload,
+            audio_url: t.audio || t.audiodownload,
             genre: trackGenre,
             license: t.license_ccurl || 'Creative Commons',
           })
@@ -233,19 +240,20 @@ export async function fetchJamendo(
   }
 
   // Save updated state
-  if (db) {
-    try {
-      const newState: JamendoState = {
-        genreIndex: (state.genreIndex + genresToFetch) % GENRES.length,
-        sortIndex: (state.sortIndex + 1) % SORT_ORDERS.length,
-        globalOffset: state.globalOffset + globalPages * PAGE_SIZE,
-        lastRun: new Date().toISOString(),
-      };
-      await db.doc(STATE_DOC).set(newState);
-      log(SOURCE, `State saved: genreIdx=${newState.genreIndex}, globalOffset=${newState.globalOffset}`);
-    } catch (e) {
-      log(SOURCE, `Could not save state: ${(e as Error).message}`);
-    }
+  try {
+    const genreIndex = (state.genreIndex + genresToFetch) % GENRES.length;
+    const globalOffset = state.globalOffset + globalPages * PAGE_SIZE;
+    const { error } = await client.from('import_state').upsert({
+      source: SOURCE,
+      genre_index: genreIndex,
+      sort_index: (state.sortIndex + 1) % SORT_ORDERS.length,
+      global_offset: globalOffset,
+      last_run: new Date().toISOString(),
+    });
+    if (error) throw error;
+    log(SOURCE, `State saved: genreIdx=${genreIndex}, globalOffset=${globalOffset}`);
+  } catch (e) {
+    log(SOURCE, `Could not save state: ${(e as Error).message}`);
   }
 
   log(SOURCE, `Fetched ${tracks.length} unique tracks (${requestCount} API calls, ${sfxSkipped} SFX skipped, ${errors.length} errors)`);
