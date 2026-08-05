@@ -1,6 +1,4 @@
-import { randomUUID } from 'crypto';
-import { Bucket } from '@google-cloud/storage';
-import { STORAGE_BUCKET } from './firebaseAdmin';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { log } from './utils';
 
 /** Download a remote URL into a Buffer. Returns null on failure. */
@@ -32,37 +30,33 @@ export async function downloadToBuffer(
   }
 }
 
-/** Upload a Buffer to Firebase Storage. Returns the public download URL. */
+/** Upload a Buffer to a Supabase Storage bucket. Returns the public URL. */
 export async function uploadToStorage(
-  bucket: Bucket,
+  client: SupabaseClient,
+  bucket: string,
   buffer: Buffer,
-  storagePath: string,
+  objectPath: string,
   contentType: string
 ): Promise<string> {
-  const token = randomUUID();
-  const file = bucket.file(storagePath);
-
-  await file.save(buffer, {
-    metadata: {
-      contentType,
-      metadata: {
-        firebaseStorageDownloadTokens: token,
-      },
-    },
+  const { error } = await client.storage.from(bucket).upload(objectPath, buffer, {
+    contentType,
+    upsert: true,
   });
+  if (error) throw new Error(`Supabase Storage upload failed: ${error.message}`);
 
-  const encodedPath = encodeURIComponent(storagePath);
-  return `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodedPath}?alt=media&token=${token}`;
+  const { data } = client.storage.from(bucket).getPublicUrl(objectPath);
+  return data.publicUrl;
 }
 
 /**
- * Download from a remote URL and upload to Firebase Storage.
- * Returns the Firebase Storage download URL, or null on failure.
+ * Download from a remote URL and upload to a Supabase Storage bucket.
+ * Returns the public URL, or null on failure.
  */
 export async function transferToStorage(
-  bucket: Bucket,
+  client: SupabaseClient,
+  bucket: string,
   sourceUrl: string,
-  storagePath: string,
+  objectPath: string,
   contentType: string,
   timeoutMs = 30000
 ): Promise<string | null> {
@@ -70,34 +64,30 @@ export async function transferToStorage(
   if (!downloaded) return null;
 
   try {
-    return await uploadToStorage(bucket, downloaded.buffer, storagePath, contentType);
+    return await uploadToStorage(client, bucket, downloaded.buffer, objectPath, contentType);
   } catch (err) {
-    log('storage', `Upload failed for ${storagePath}: ${(err as Error).message}`);
+    log('storage', `Upload failed for ${bucket}/${objectPath}: ${(err as Error).message}`);
     return null;
   }
 }
 
 /**
- * Download audio + artwork for a track and upload both to Firebase Storage.
- * Returns updated URLs and backup of originals, or null if audio fails.
+ * Download audio + artwork for a track and upload both to Supabase Storage.
+ * Audio is required (returns null if it fails); artwork failure keeps the
+ * original (typically Jamendo CDN) URL instead of blocking the whole track.
  */
 export async function uploadTrackMedia(
-  bucket: Bucket,
+  client: SupabaseClient,
   trackId: string,
   audioUrl: string,
   artworkUrl: string
-): Promise<{
-  audioUrl: string;
-  artwork: string;
-  originalAudioUrl: string;
-  originalArtwork: string;
-} | null> {
-  const audioPath = `spotfly-audio/${trackId}.mp3`;
-  const artworkPath = `spotfly-artwork/${trackId}.jpg`;
+): Promise<{ audioUrl: string; artwork: string } | null> {
+  const audioPath = `${trackId}.mp3`;
+  const artworkPath = `${trackId}.jpg`;
 
-  // Download + upload audio (required)
   const newAudioUrl = await transferToStorage(
-    bucket,
+    client,
+    'audio',
     audioUrl,
     audioPath,
     'audio/mpeg',
@@ -108,11 +98,11 @@ export async function uploadTrackMedia(
     return null;
   }
 
-  // Download + upload artwork (optional — keep original on failure)
   let newArtworkUrl = artworkUrl;
   if (artworkUrl) {
     const artResult = await transferToStorage(
-      bucket,
+      client,
+      'artwork',
       artworkUrl,
       artworkPath,
       'image/jpeg',
@@ -125,10 +115,5 @@ export async function uploadTrackMedia(
     }
   }
 
-  return {
-    audioUrl: newAudioUrl,
-    artwork: newArtworkUrl,
-    originalAudioUrl: audioUrl,
-    originalArtwork: artworkUrl,
-  };
+  return { audioUrl: newAudioUrl, artwork: newArtworkUrl };
 }
