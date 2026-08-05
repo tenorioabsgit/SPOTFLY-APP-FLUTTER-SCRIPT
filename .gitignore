@@ -44,3 +44,6 @@ yarn-error.*
 /android
 
 .vercel
+
+# Superpowers worktrees
+.worktrees/
